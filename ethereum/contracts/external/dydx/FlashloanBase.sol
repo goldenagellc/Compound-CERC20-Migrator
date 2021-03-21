@@ -37,7 +37,7 @@ contract FlashloanBase {
     {
         // Needs to be overcollateralize
         // Needs to provide +2 wei to be safe
-        return amount.add(2);
+        return amount + 2;
     }
 
     function _getAccountInfo() internal view returns (Account.Info memory) {
