@@ -1,0 +1,30 @@
+{
+  "name": "compound-wbtc-migrator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/goldenagellc/Compound-WBTC-Migrator",
+  "author": "Golden Age Technologies LLC",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.2.4",
+    "big.js": "^6.0.3",
+    "dotenv-safe": "^8.2.0",
+    "openzeppelin-solidity": "https://github.com/OpenZeppelin/openzeppelin-contracts#974c534210ab3347bdaa45f0f07cfe298a8a6866",
+    "truffle": "^5.2.5",
+    "web3": "^1.3.4"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "ganache-cli": "^6.12.2",
+    "mocha": "^8.3.2"
+  },
+  "scripts": {
+    "compile": "npx truffle compile",
+    "test": "npx truffle test --network ganache",
+    "test-verbose": "npx truffle test --network ganache --show-events",
+    "test-verbose-trace": "npx truffle test --network ganache --show-events --stacktrace",
+    "deploy-production": "npx truffle migrate --network production",
+    "console-production": "npx truffle console --network production"
+  }
+}
