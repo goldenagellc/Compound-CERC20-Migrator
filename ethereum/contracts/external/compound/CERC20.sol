@@ -5,6 +5,7 @@ interface CERC20 {
     function accrueInterest() external returns (uint);
     function accrualBlockNumber() external view returns (uint);
     function exchangeRateStored() external view returns (uint);
+    function exchangeRateCurrent() external returns (uint);
 
     function mint(uint mintAmount) external returns (uint);
 
