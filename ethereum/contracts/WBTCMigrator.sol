@@ -25,22 +25,33 @@ contract WBTCMigrator is FlashLoanReceiverBase {
     address private constant CWBTC2 = 0xccF4429DB6322D5C611ee964527D42E5d685DD6a;
 
     constructor(ILendingPoolAddressesProvider provider) FlashLoanReceiverBase(provider) {
-        
+
     }
 
-    function migrate(address account) public payable {
-        uint256 exchangeRateV1 = CERC20(CWBTC1).exchangeRateCurrent();
-        uint256 exchangeRateV2 = CERC20(CWBTC2).exchangeRateCurrent();
+    function migrateWithExtraChecks(address account) external {
+        if (CERC20(CWBTC1).balanceOf(account) == 0) return;
 
+        ( , uint liquidity1, uint shortfall1) = Comptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B).getAccountLiquidity(account);
+        if (shortfall1 != 0) return;
+
+        migrate(account);
+        ( , uint liquidity2, uint shortfall2) = Comptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B).getAccountLiquidity(account);
+
+        require(liquidity1 == liquidity2 && shortfall1 == shortfall2, "Oops. Account health mismatch");
+        require(IERC20(WBTC).balanceOf(address(this)) == 0, "Oops. Migration contract profited");
+    }
+
+    function migrate(address account) public {
         uint256 supplyV1 = CERC20(CWBTC1).balanceOf(account);
+        require(supplyV1 > 0, "0 balance no migration needed");
         require(IERC20(CWBTC1).allowance(account, address(this)) >= supplyV1, "Please approve for cWBTCv1 transfers");
 
         // fetch the flash loan premium from AAVE. (ex. 0.09% fee would show up as `9` here)
         uint256 premium = LENDING_POOL.FLASHLOAN_PREMIUM_TOTAL();
+        uint256 exchangeRateV1 = CERC20(CWBTC1).exchangeRateCurrent();
         uint256 supplyV2Underlying = supplyV1 * exchangeRateV1 * (10_000 - premium) / 10_000; // 18 extra decimals
-        uint256 supplyV2 = supplyV2Underlying / exchangeRateV2;
 
-        bytes memory params = abi.encode(account, supplyV1, supplyV2);
+        bytes memory params = abi.encode(account, supplyV1);
         initiateFlashLoan(WBTC, supplyV2Underlying / 1e18, params);
     }
 
@@ -54,20 +65,19 @@ contract WBTCMigrator is FlashLoanReceiverBase {
         require(msg.sender == address(LENDING_POOL), "Flash loan initiated by outsider");
         require(initiator == address(this), "Flash loan initiated by outsider");
 
-        (address account, uint256 supplyV1, uint256 supplyV2) = abi.decode(params, (address, uint256, uint256));
+        // retrieve params. also note that amounts[0] is supplyV2Underlying
+        (address account, uint256 supplyV1) = abi.decode(params, (address, uint256));
 
         // Mint v2 tokens and send them to account
         IERC20(WBTC).approve(CWBTC2, amounts[0]);
-        require(CERC20(CWBTC2).mint(supplyV2) == 0, "Failed to mint cWBTCv2");
-        require(IERC20(CWBTC2).transfer(account, supplyV2), "Failed to send cWBTCv2");
+        require(CERC20(CWBTC2).mint(amounts[0]) == 0, "Failed to mint cWBTCv2");
+        require(IERC20(CWBTC2).transfer(account, IERC20(CWBTC2).balanceOf(address(this))), "Failed to send cWBTCv2");
 
         // Pull and redeem v1 tokens from account
         require(IERC20(CWBTC1).transferFrom(account, address(this), supplyV1), "Failed to receive cWBTCv1");
         require(CERC20(CWBTC1).redeem(supplyV1) == 0, "Failed to redeem cWBTCv1");
         IERC20(WBTC).approve(address(LENDING_POOL), amounts[0] + premiums[0]);
 
-        // Verify
-        require(IERC20(WBTC).balanceOf(address(this)) == 0, "Oops. Migration contract profited");
         return true;
     }
 

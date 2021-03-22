@@ -16,4 +16,6 @@ interface Comptroller {
     function getAllMarkets() external view returns (address[] memory);
 
     function seizeGuardianPaused() external view returns (bool);
+
+    function redeemAllowed(address cTokenAddress, address account, uint amount) external returns (uint);
 }

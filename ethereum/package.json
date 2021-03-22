@@ -26,5 +26,8 @@
     "test-verbose-trace": "npx truffle test --network ganache --show-events --stacktrace",
     "deploy-production": "npx truffle migrate --network production",
     "console-production": "npx truffle console --network production"
+  },
+  "directories": {
+    "test": "test"
   }
 }

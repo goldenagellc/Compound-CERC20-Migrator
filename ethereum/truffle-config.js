@@ -1,18 +1,15 @@
 require("dotenv-safe").config({
   example: process.env.CI ? ".env.ci.example" : ".env.example",
 });
-
 const ganache = require("ganache-cli");
 const HDWalletProvider = require("@truffle/hdwallet-provider");
-
 const { ProviderFor } = require("./providers");
 
-// IPC provider is the fastest for tests that can run on the most up-to-date
-// mainnet data, but it can't be used for forking at a specific block.
-// WS provider is used in order to run tests in the CI
 const mainnet_ws = ProviderFor("mainnet", {
-  type: "WS_Infura",
-  envKeyID: "PROVIDER_INFURA_ID",
+  type: "IPC",
+  envKeyPath: "PROVIDER_IPC_PATH",
+  // type: "WS_Infura",
+  // envKeyID: "PROVIDER_INFURA_ID",
 });
 const maxUINT256 = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
@@ -21,11 +18,8 @@ const ganacheServerConfig = {
   accounts: [
     {
       balance: maxUINT256,
-      // secretKey: "0x" + process.env.ACCOUNT_SECRET_TEST,
+      secretKey: "0x" + process.env.ACCOUNT_SECRET_DEPLOY,
     },
-    { balance: "0x0" },
-    { balance: "0x0" },
-    { balance: "0x0" },
   ],
   ws: true,
 };
@@ -64,6 +58,8 @@ module.exports = {
       gas: 1000000,
     },
   },
+
+  mocha: {},
 
   // Configure your compilers
   compilers: {
