@@ -49,46 +49,45 @@ contract WBTCMigrator is FlashLoanReceiverBase {
     }
 
     /**
-     * @notice Like `migrate()`, allows anyone to migrate `account`'s collateral from
-     *      cWBTCv1 to cWBTCv2, so long as `account` has already approve this contract
+     * @notice Like `migrate()`, allows msg.sender to migrate collateral from
+     *      cWBTCv1 to cWBTCv2, so long as msg.sender has already approve this contract
      *      to transfer their cWBTCv1.
      *
-     *      This version of the function returns early if it detects that `account` can't
+     *      This version of the function returns early if it detects that msg.sender can't
      *      be migrated. It also looks for WBTC dust after the transaction, and if any
-     *      exists it will be sent back to `account`
+     *      exists it will be sent back to msg.sender
      *
      * @param account The cWBTCv1 supplier to migrate
      */
-    function migrateWithExtraChecks(address account, bool gasOptimized) external {
-        if (CERC20(CWBTC1).balanceOf(account) == 0) return;
+    function migrateWithExtraChecks(bool gasOptimized) external {
+        if (CERC20(CWBTC1).balanceOf(msg.sender) == 0) return;
 
-        ( , , uint256 shortfall) = comptroller.getAccountLiquidity(account);
+        ( , , uint256 shortfall) = comptroller.getAccountLiquidity(msg.sender);
         if (shortfall != 0) return;
 
-        address[] memory enteredMarkets = comptroller.getAssetsIn(account);
+        address[] memory enteredMarkets = comptroller.getAssetsIn(msg.sender);
         for (uint256 i = 0; i < enteredMarkets.length; i++) {
             if (enteredMarkets[i] != CWBTC2) continue;
 
-            migrate(account, gasOptimized);
+            migrate(gasOptimized);
 
             uint256 dust = IERC20(WBTC).balanceOf(address(this));
-            if (dust != 0) IERC20(WBTC).transfer(account, dust);
+            if (dust != 0) IERC20(WBTC).transfer(msg.sender, dust);
         }
     }
 
     /**
-     * @notice Allows anyone to migrate `account`'s collateral from cWBTCv1 to cWBTCv2, so long
-     *      as `account` has already approve this contract to transfer their cWBTCv1.
+     * @notice Allows msg.sender to migrate collateral from cWBTCv1 to cWBTCv2, so long
+     *      as msg.sender has already approve this contract to transfer their cWBTCv1.
      *
      *      WARNING: This is made possible by AAVE flash loans, which means migration will incur
      *      a 0.09% loss in underlying WBTC
      *
-     * @param account The cWBTCv1 supplier to migrate
      */
-    function migrate(address account, bool gasOptimized) public {
-        uint256 supplyV1 = CERC20(CWBTC1).balanceOf(account);
+    function migrate(bool gasOptimized) public {
+        uint256 supplyV1 = CERC20(CWBTC1).balanceOf(msg.sender);
         require(supplyV1 > 0, "0 balance no migration needed");
-        require(IERC20(CWBTC1).allowance(account, address(this)) >= supplyV1, "Please approve for cWBTCv1 transfers");
+        require(IERC20(CWBTC1).allowance(msg.sender, address(this)) >= supplyV1, "Please approve for cWBTCv1 transfers");
 
         // fetch the flash loan premium from AAVE. (ex. 0.09% fee would show up as `9` here)
         uint256 premium = LENDING_POOL.FLASHLOAN_PREMIUM_TOTAL();
@@ -98,7 +97,7 @@ contract WBTCMigrator is FlashLoanReceiverBase {
 
         if (gasOptimized) {
             supplyV2Underlying = supplyV1 * exchangeRateV1 * (10_000 - premium) / 1e22;
-            bytes memory params = abi.encode(account, supplyV1);
+            bytes memory params = abi.encode(msg.sender, supplyV1);
 
             initiateAAVEFlashLoan(WBTC, supplyV2Underlying, params);
 
@@ -109,10 +108,10 @@ contract WBTCMigrator is FlashLoanReceiverBase {
             uint256 dollarsPerBTC = priceOracle.getUnderlyingPrice(CWBTC1);
             uint256 requiredETH = supplyV2Underlying * 1e18 * dollarsPerBTC / dollarsPerETH / collatFact;
 
-            initiateKeeperFlashloan(account, requiredETH, supplyV1, supplyV2Underlying - 1);
+            initiateKeeperFlashloan(msg.sender, requiredETH, supplyV1, supplyV2Underlying - 1);
         }
         
-        emit Migrated(account, supplyV1 * exchangeRateV1 / 1e18, supplyV2Underlying);
+        emit Migrated(msg.sender, supplyV1 * exchangeRateV1 / 1e18, supplyV2Underlying);
     }
 
     /// @dev When this is called, contract's WBTC balance should be _supplyV2Underlying. After this has run,

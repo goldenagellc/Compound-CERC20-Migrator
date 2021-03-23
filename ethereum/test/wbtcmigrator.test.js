@@ -97,7 +97,7 @@ contract("WBTCMigrator Test", (accounts) => {
       if (excludedSuppliers.has(supplier)) return false;
 
       const gasOptimized = Math.random() < 0.5;
-      const tx = await wbtcMigrator.migrateWithExtraChecks(supplier, gasOptimized, {
+      const tx = await wbtcMigrator.migrateWithExtraChecks(gasOptimized, {
         from: supplier,
       });
       assert.equal(tx.receipt.status, 1);
