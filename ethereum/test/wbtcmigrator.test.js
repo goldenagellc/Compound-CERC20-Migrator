@@ -1,9 +1,10 @@
-const { assert, expect } = require("chai");
+const { assert } = require("chai");
 const Big = require("big.js");
 
 let suppliers = require("./_suppliers.json");
 const comptrollerabi = require("./_comptrollerabi.json");
 const cwbtcv1abi = require("./_cwbtcv1abi.json");
+const cwbtcv2abi = require("./_cwbtcv2abi.json");
 
 const WBTCMigrator = artifacts.require("WBTCMigrator");
 
@@ -27,6 +28,7 @@ contract("WBTCMigrator Test", (accounts) => {
   let wbtcMigrator;
   let comptroller;
   let cWBTCV1;
+  let cWBTCV2;
 
   let excludedSuppliers = new Set();
   let successCountMarketsEntered = 0;
@@ -100,9 +102,12 @@ contract("WBTCMigrator Test", (accounts) => {
         assert.equal(migration.event, "Migrated");
         assert.equal(migration.args.account, web3.utils.toChecksumAddress(supplier));
 
-        const underlyingV1 = migration.args.underlyingV1.toNumber();
-        const underlyingV2 = migration.args.underlyingV2.toNumber();
-        assert.isTrue(Math.round(10000 * underlyingV2 / underlyingV1).toFixed(0) === "9991");
+        const underlyingV1Event = migration.args.underlyingV1.toNumber();
+        const underlyingV2Event = migration.args.underlyingV2.toNumber();
+        assert.isTrue(Math.round(10000 * underlyingV2Event / underlyingV1Event).toFixed(0) === "9991");
+
+        const underlyingV2OnChain = Big(await cWBTCV2.methods.balanceOfUnderlying(supplier).call());
+        assert.isTrue(underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0) === "9991");
       }
 
       return tx.receipt.status == 1;
@@ -123,6 +128,10 @@ contract("WBTCMigrator Test", (accounts) => {
     cWBTCV1 = new web3.eth.Contract(
       cwbtcv1abi,
       "0xc11b1268c1a384e55c48c2391d8d480264a3a7f4"
+    );
+    cWBTCV2 = new web3.eth.Contract(
+      cwbtcv2abi,
+      "0xccf4429db6322d5c611ee964527d42e5d685dd6a"
     );
   });
 });
