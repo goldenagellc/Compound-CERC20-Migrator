@@ -82,11 +82,22 @@ contract("WBTCMigrator Test", (accounts) => {
     console.log(`${successCountMarketsEntered} accounts entered v2 market`);
   });
 
+  it("should send some ETH to migrator", async () => {
+    await web3.eth.sendTransaction({
+      from: accounts[0],
+      to: wbtcMigrator.address,
+      value: "1000" // enough for 1000 migrations
+    });
+  });
+
   it("should migrate", async () => {
+
+
     const promises = suppliers.map(async (supplier) => {
       if (excludedSuppliers.has(supplier)) return false;
 
-      const tx = await wbtcMigrator.migrateWithExtraChecks(supplier, {
+      const gasOptimized = Math.random() < 0.5;
+      const tx = await wbtcMigrator.migrateWithExtraChecks(gasOptimized, {
         from: supplier,
       });
       assert.equal(tx.receipt.status, 1);
@@ -94,20 +105,30 @@ contract("WBTCMigrator Test", (accounts) => {
       // if anything happened...
       if (tx.receipt.rawLogs.length > 0) {
         // then we expect a migration to have happened...
-        numLogs = tx.receipt.rawLogs.length;
-        assert.isTrue(numLogs == 27 || numLogs == 25);
-
+        const numLogs = tx.receipt.rawLogs.length;
         const migration = tx.receipt.logs[0];
         assert.equal(migration.logIndex, numLogs - 2);
         assert.equal(migration.event, "Migrated");
-        assert.equal(migration.args.account, web3.utils.toChecksumAddress(supplier));
+        assert.equal(
+          migration.args.account,
+          web3.utils.toChecksumAddress(supplier)
+        );
 
         const underlyingV1Event = migration.args.underlyingV1.toNumber();
         const underlyingV2Event = migration.args.underlyingV2.toNumber();
-        assert.isTrue(Math.round(10000 * underlyingV2Event / underlyingV1Event).toFixed(0) === "9991");
+        const underlyingV2OnChain = Big(
+          await cWBTCV2.methods.balanceOfUnderlying(supplier).call()
+        );
 
-        const underlyingV2OnChain = Big(await cWBTCV2.methods.balanceOfUnderlying(supplier).call());
-        assert.isTrue(underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0) === "9991");
+        if (gasOptimized) {
+          assert.isTrue(numLogs === 27 || numLogs === 25);
+          assert.equal(Math.round(10000 * underlyingV2Event / underlyingV1Event).toFixed(0), "9991");
+          assert.equal(underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0), "9991");
+        } else {
+          assert.equal(numLogs, 37);
+          assert.equal(Math.round(10000 * underlyingV2Event / underlyingV1Event).toFixed(0), "10000");
+          assert.equal(underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0), "10000");
+        }
       }
 
       return tx.receipt.status == 1;
