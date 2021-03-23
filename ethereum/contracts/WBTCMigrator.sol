@@ -20,7 +20,7 @@ import "./external/IWETH.sol";
 contract WBTCMigrator is FlashLoanReceiverBase {
     using SafeERC20 for IERC20;
 
-    event Migrated(address indexed account, uint underlyingV1, uint underlyingV2);
+    event Migrated(address indexed account, uint256 underlyingV1, uint256 underlyingV2);
 
     address private constant COMPTROLLER = 0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B;
     address private constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
@@ -43,13 +43,18 @@ contract WBTCMigrator is FlashLoanReceiverBase {
     function migrateWithExtraChecks(address account) external {
         if (CERC20(CWBTC1).balanceOf(account) == 0) return;
 
-        ( , , uint shortfall) = Comptroller(COMPTROLLER).getAccountLiquidity(account);
+        ( , , uint256 shortfall) = Comptroller(COMPTROLLER).getAccountLiquidity(account);
         if (shortfall != 0) return;
 
-        migrate(account);
+        address[] memory enteredMarkets = Comptroller(COMPTROLLER).getAssetsIn(account);
+        for (uint256 i = 0; i < enteredMarkets.length; i++) {
+            if (enteredMarkets[i] != CWBTC2) continue;
 
-        uint256 dust = IERC20(WBTC).balanceOf(address(this));
-        if (dust != 0) IERC20(WBTC).transfer(account, dust);
+            migrate(account);
+
+            uint256 dust = IERC20(WBTC).balanceOf(address(this));
+            if (dust != 0) IERC20(WBTC).transfer(account, dust);
+        }
     }
 
     /**
