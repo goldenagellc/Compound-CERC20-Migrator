@@ -6,9 +6,9 @@ const comptrollerabi = require("./_comptrollerabi.json");
 const cwbtcv1abi = require("./_cwbtcv1abi.json");
 const cwbtcv2abi = require("./_cwbtcv2abi.json");
 
-const WBTCMigrator = artifacts.require("WBTCMigrator");
+const CERC20Migrator = artifacts.require("CERC20Migrator");
 
-contract("WBTCMigrator Test", (accounts) => {
+contract("CERC20Migrator - WBTC Test", (accounts) => {
   web3.extend({
     methods: [
       {
@@ -25,7 +25,7 @@ contract("WBTCMigrator Test", (accounts) => {
 
   const maxUINT256 = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
-  let wbtcMigrator;
+  let migrator;
   let comptroller;
   let cWBTCV1;
   let cWBTCV2;
@@ -43,7 +43,7 @@ contract("WBTCMigrator Test", (accounts) => {
 
       await web3.unlockUnknownAccount(supplier);
 
-      const method = cWBTCV1.methods.approve(wbtcMigrator.address, maxUINT256);
+      const method = cWBTCV1.methods.approve(migrator.address, maxUINT256);
       const tx = method.send({ from: supplier });
       const receipt = await tx;
 
@@ -85,19 +85,17 @@ contract("WBTCMigrator Test", (accounts) => {
   it("should send some ETH to migrator", async () => {
     await web3.eth.sendTransaction({
       from: accounts[0],
-      to: wbtcMigrator.address,
-      value: "1000" // enough for 1000 migrations
+      to: migrator.address,
+      value: "1000", // enough for 1000 migrations
     });
   });
 
   it("should migrate", async () => {
-
-
     const promises = suppliers.map(async (supplier) => {
       if (excludedSuppliers.has(supplier)) return false;
 
       const gasOptimized = Math.random() < 0.5;
-      const tx = await wbtcMigrator.migrateWithExtraChecks(gasOptimized, {
+      const tx = await migrator.migrateWithExtraChecks(gasOptimized, {
         from: supplier,
       });
       assert.equal(tx.receipt.status, 1);
@@ -122,12 +120,28 @@ contract("WBTCMigrator Test", (accounts) => {
 
         if (gasOptimized) {
           assert.isTrue(numLogs === 27 || numLogs === 25);
-          assert.equal(Math.round(10000 * underlyingV2Event / underlyingV1Event).toFixed(0), "9991");
-          assert.equal(underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0), "9991");
+          assert.equal(
+            Math.round((10000 * underlyingV2Event) / underlyingV1Event).toFixed(
+              0
+            ),
+            "9991"
+          );
+          assert.equal(
+            underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0),
+            "9991"
+          );
         } else {
           assert.equal(numLogs, 37);
-          assert.equal(Math.round(10000 * underlyingV2Event / underlyingV1Event).toFixed(0), "10000");
-          assert.equal(underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0), "10000");
+          assert.equal(
+            Math.round((10000 * underlyingV2Event) / underlyingV1Event).toFixed(
+              0
+            ),
+            "10000"
+          );
+          assert.equal(
+            underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0),
+            "10000"
+          );
         }
       }
 
@@ -141,7 +155,7 @@ contract("WBTCMigrator Test", (accounts) => {
   });
 
   before(async () => {
-    wbtcMigrator = await WBTCMigrator.deployed();
+    migrator = await CERC20Migrator.deployed();
     comptroller = new web3.eth.Contract(
       comptrollerabi,
       "0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b"
