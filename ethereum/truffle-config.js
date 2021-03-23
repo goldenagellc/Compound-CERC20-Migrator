@@ -5,22 +5,23 @@ const ganache = require("ganache-cli");
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 const { ProviderFor } = require("./providers");
 
-const mainnet_ws = ProviderFor("mainnet", {
-  type: "IPC",
-  envKeyPath: "PROVIDER_IPC_PATH",
-  // type: "WS_Infura",
-  // envKeyID: "PROVIDER_INFURA_ID",
-});
+const mainnet_ws = ProviderFor(
+  "mainnet",
+  process.env.CI
+    ? {
+        type: "WS_Infura",
+        envKeyID: "PROVIDER_INFURA_ID",
+      }
+    : {
+        type: "IPC",
+        envKeyPath: "PROVIDER_IPC_PATH",
+      }
+);
 const maxUINT256 = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
 const ganacheServerConfig = {
   fork: mainnet_ws,
-  accounts: [
-    {
-      balance: maxUINT256,
-      secretKey: "0x" + process.env.ACCOUNT_SECRET_DEPLOY,
-    },
-  ],
+  accounts: [{ balance: maxUINT256 }],
   ws: true,
 };
 
