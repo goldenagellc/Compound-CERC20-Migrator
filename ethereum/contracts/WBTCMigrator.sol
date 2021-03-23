@@ -25,13 +25,12 @@ contract WBTCMigrator is FlashLoanReceiverBase {
 
     event Migrated(address indexed account, uint256 underlyingV1, uint256 underlyingV2);
 
+    address payable private constant KEEPER_LIQUIDITY_POOL = payable(0x35fFd6E268610E764fF6944d07760D0EFe5E40E5);
+    address private constant KEEPER_BORROW_PROXY = 0xde92742213FEa5f78c6840B6EcBf214115ea8002;
     address private constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address private constant CWBTC1 = 0xC11b1268C1A384e55C48c2391d8d480264A3A7F4;
     address private constant CWBTC2 = 0xccF4429DB6322D5C611ee964527D42E5d685DD6a;
     address private constant CETH = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5;
-
-    address payable private constant KEEPER_LIQUIDITY_POOL = payable(0x35fFd6E268610E764fF6944d07760D0EFe5E40E5);
-    address private constant KEEPER_BORROW_PROXY = 0xde92742213FEa5f78c6840B6EcBf214115ea8002;
 
     Comptroller public immutable comptroller;
 
@@ -43,6 +42,7 @@ contract WBTCMigrator is FlashLoanReceiverBase {
         comptroller = Comptroller(_comptroller);
         priceOracle = UniswapAnchoredView(Comptroller(_comptroller).oracle());
 
+        // Enter the cETH market now so that we don't have to do it ad-hoc during KeeperDAO loans
         address[] memory markets = new address[](1);
         markets[0] = CETH;
         Comptroller(_comptroller).enterMarkets(markets);
@@ -57,7 +57,8 @@ contract WBTCMigrator is FlashLoanReceiverBase {
      *      be migrated. It also looks for WBTC dust after the transaction, and if any
      *      exists it will be sent back to msg.sender
      *
-     * @param account The cWBTCv1 supplier to migrate
+     * @param gasOptimized When true, borrow WBTC directly (from AAVE, 0.09% fee).
+     *      When false, get WBTC indirectly (from KeeperDAO, higher gas usage).
      */
     function migrateWithExtraChecks(bool gasOptimized) external {
         if (CERC20(CWBTC1).balanceOf(msg.sender) == 0) return;
@@ -83,6 +84,8 @@ contract WBTCMigrator is FlashLoanReceiverBase {
      *      WARNING: This is made possible by AAVE flash loans, which means migration will incur
      *      a 0.09% loss in underlying WBTC
      *
+     * @param gasOptimized When true, borrow WBTC directly (from AAVE, 0.09% fee).
+     *      When false, get WBTC indirectly (from KeeperDAO, higher gas usage).
      */
     function migrate(bool gasOptimized) public {
         uint256 supplyV1 = CERC20(CWBTC1).balanceOf(msg.sender);
@@ -173,8 +176,9 @@ contract WBTCMigrator is FlashLoanReceiverBase {
         );
     }
 
+    /// @dev Meant to be called by KeeperDAO Borrow Proxy, but be careful since anyone might call it
     function keeperFlashloanCallback(address _account, uint256 _amountETH, uint256 _supplyV1, uint256 _supplyV2Underlying) external {
-        // require(msg.sender == KEEPER_BORROW_PROXY, "Flashloan initiated by outsider");
+        require(msg.sender == KEEPER_BORROW_PROXY, "Flashloan initiated by outsider");
 
         // Use the borrowed ETH to get WBTC
         CEther(CETH).mint{value: _amountETH}();
@@ -195,7 +199,7 @@ contract WBTCMigrator is FlashLoanReceiverBase {
         ILiquidityPool(KEEPER_LIQUIDITY_POOL).borrow(
             // Address of the token we want to borrow. Using this address
             // means that we want to borrow ETH.
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
             // The amount of WEI that we will borrow. We have to return at least
             // more than this amount.
             _amountETH,
