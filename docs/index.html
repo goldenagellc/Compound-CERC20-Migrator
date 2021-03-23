@@ -7,7 +7,7 @@
 <html>
 
 <head>
-	<title>DSD Coupons</title>
+	<title>CERC20 Migrate</title>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="assets/css/main.css" />
@@ -31,7 +31,7 @@
 					<p>Compound recently added a new market for WBTC. This new market utilizes a new cToken, which means holders of the old cToken should migrate their collateral. If you're one of those holders, this website will help you through the migration process.</p>
 					<p>Please note: We can't atomically migrate your borrows without additional changes to Compound. You'll have to do that part yourself.</p>
 					<h3>A note on security:</h3>
-					<p>The contract powering this website is <strong>UNAUDITED</strong>. Use at your own risk, and <strong>DO NOT</strong> send tokens to it. You can read the code <a href="https://github.com/goldenagellc/Compound-WBTC-Migrator" target="_blank">here</a> and find the contract on Etherscan <a href="https://etherscan.io/address/" target="_blank">here</a>.</p>
+					<p>The contract powering this website is <strong>UNAUDITED</strong>. Use at your own risk, and <strong>DO NOT</strong> send tokens to it. You can read the code <a href="https://github.com/goldenagellc/Compound-CERC20-Migrator" target="_blank">here</a> and find the contract on Etherscan <a href="https://etherscan.io/address/" target="_blank">here</a>.</p>
 				</div>
 				<div class="image filtered span-1-75" data-position="25% 25%">
 					<img src="images/pic02.jpg" alt="" />
@@ -98,10 +98,11 @@
 					<div class="span-2-25">
 
 						<h3 class="major">4. Migrate!</h3>
-						<p>Last step! Clicking <strong>Migrate</strong> will use AAVE flash loans to trade your v1 tokens for v2 tokens. <strong>This incurs an irreversible 0.09% penalty!</strong> If you're not ok with that, <strong>do not continue.</strong> We're working to remove the fee and hope to publish an update soon.</p>
+						<p>You have two options now. A gas-optimized migration requires ~900000 gas and uses AAVE flash loans. <strong>This means you'd lose 0.09% of your collateral (AAVE fee) during the migration.</strong> A fee-minimized migration uses KeeperDAO flash loans instead, so you keep all of your collateral but pay ~1500000 gas.</p>
 
 						<ul class="actions stacked">
-							<li><input type="button" id="web3_Migrate" class="button large primary color0" value="Migrate v1->v2"></li>
+							<li><input type="button" id="web3_MigrateGas" class="button large primary color0" value="Gas-Optimized Migration"></li>
+							<li><input type="button" id="web3_Migrate" class="button large primary color0" value="Fee-Optimized Migration"></li>
 						</ul>
 					</div>
 				</div>
