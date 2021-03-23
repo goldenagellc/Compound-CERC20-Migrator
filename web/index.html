@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+<!--
+	Ethereal by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+
+<head>
+	<title>DSD Coupons</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript>
+		<link rel="stylesheet" href="assets/css/noscript.css" />
+	</noscript>
+</head>
+
+<body class="is-preload">
+
+	<!-- Page Wrapper -->
+	<div id="page-wrapper">
+
+		<!-- Wrapper -->
+		<div id="wrapper">
+
+			<!-- Panel (Banner) -->
+			<section class="panel banner right">
+				<div class="content color0 span-3-75">
+					<h1 class="major">Welcome!</h1>
+					<p>Compound recently added a new market for WBTC. This new market utilizes a new cToken, which means holders of the old cToken should migrate their collateral. If you're one of those holders, this website will help you through the migration process.</p>
+					<p>Please note: We can't atomically migrate your borrows without additional changes to Compound. You'll have to do that part yourself.</p>
+					<h3>A note on security:</h3>
+					<p>The contract powering this website is <strong>UNAUDITED</strong>. Use at your own risk, and <strong>DO NOT</strong> send tokens to it. You can read the code <a href="https://github.com/goldenagellc/Compound-WBTC-Migrator" target="_blank">here</a> and find the contract on Etherscan <a href="https://etherscan.io/address/" target="_blank">here</a>.</p>
+				</div>
+				<div class="image filtered span-1-75" data-position="25% 25%">
+					<img src="images/pic02.jpg" alt="" />
+				</div>
+			</section>
+
+			<!-- Panel -->
+			<section class="panel color2-alt" id="get-started">
+				<div class="intro color2">
+					<h3 class="major">Let's get started!</h3>
+					<p><em>Just 4 easy steps:</em></p>
+					<ol>
+						<li><h4>Connect to MetaMask.</h4></li>
+						<li><h4>Enter the cWBTCv2 market.</h4></li>
+						<li><h4>Approve the contract.</h4></li>
+						<li><h4>Migrate!</h4></li>
+					</ol>
+				</div>
+				<div class="inner columns aligned">
+					<div class="span-2-25">
+
+						<h3 class="major">1. Connect to MetaMask</h3>
+						<p>When you click the button below, MetaMask will pop up and ask you which account to use. Pick one for the migration, then click <strong>Next</strong>, followed by <strong>Connect</strong>. This just lets us see your wallet address and talk to a Web3 provider.</p>
+						<p><i>Disclaimer: Use this website at your own risk. You're your own bank and you're responsible for any loss of funds. DeFi is the wild west.</i></p>
+						<ul class="actions">
+							<li><input type="button" id="web3_Connect" class="button large" value="Connect"></li>
+						</ul>
+
+					</div>
+					<div class="span-2-75">
+
+						<h3 class="major">2. Enter the cWBTCv2 market</h3>
+						<blockquote>Tip: If you've already entered the market, there's no need to do so again.</blockquote>
+						<p>You'll receive cWBTCv2 tokens in a later step. In order for them to count as collateral, you need to have entered the v2 market.</p>
+						<ul class="actions">
+							<li><input type="button" id="web3_Enter" class="button large" value="Enter v2 Market"></li>
+						</ul>
+
+					</div>
+					<div class="span-2-75">
+
+						<h3 class="major">3. Approve the contract</h3>
+						<blockquote>You can revoke this approval at any time.</blockquote>
+						<p>This allows the migrator to pull in your v1 tokens and replace them with v2 tokens.</p>
+						<ul class="actions stacked">
+							<li><input type="button" id="web3_Approve" class="button large" value="Approve Migrator"></li>
+							<li><input type="button" id="web3_Revoke" class="button large" value="Revoke Approval"></li>
+						</ul>
+
+<!--						<form action="javascript:" onsubmit="return web3_SetMaxPenalty(this)">-->
+<!--							<div class="fields">-->
+<!--								<div class="field third">-->
+<!--									<label for="max-penalty">Max % Burned</label>-->
+<!--									<input type="text" id="max-penalty" value="" placeholder="0.00" required />-->
+<!--								</div>-->
+<!--							</div>-->
+<!--							<ul class="actions">-->
+<!--								<li><input type="submit" value="Apply" class="primary color2" /></li>-->
+<!--								<li><input type="reset" value="Clear" /></li>-->
+<!--							</ul>-->
+<!--						</form>-->
+
+					</div>
+					<div class="span-2-25">
+
+						<h3 class="major">4. Migrate!</h3>
+						<p>Last step! Clicking <strong>Migrate</strong> will use AAVE flash loans to trade your v1 tokens for v2 tokens. <strong>This incurs an irreversible 0.09% penalty!</strong> If you're not ok with that, <strong>do not continue.</strong> We're working to remove the fee and hope to publish an update soon.</p>
+
+						<ul class="actions stacked">
+							<li><input type="button" id="web3_Migrate" class="button large primary color0" value="Migrate v1->v2"></li>
+						</ul>
+					</div>
+				</div>
+			</section>
+
+			<!-- Copyright -->
+			<div class=" copyright">Made with 💔. Design: <a href="https://html5up.net">HTML5 UP</a>.</div>
+		</div>
+	</div>
+
+	<!-- Scripts -->
+	<script src="assets/js/jquery.min.js"></script>
+	<script src="assets/js/browser.min.js"></script>
+	<script src="assets/js/breakpoints.min.js"></script>
+	<script src="assets/js/main.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.3.0/web3.min.js"
+		integrity="sha512-ppuvbiAokEJLjOUQ24YmpP7tTaLRgzliuldPRZ01ul6MhRC+B8LzcVkXmUsDee7ne9chUfApa9/pWrIZ3rwTFQ=="
+		crossOrigin="anonymous"></script>
+	<script src="assets/js/migrator.js"></script>
+
+</body>
+
+</html>
