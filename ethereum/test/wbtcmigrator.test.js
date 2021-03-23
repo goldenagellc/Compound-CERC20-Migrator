@@ -77,7 +77,7 @@ contract("WBTCMigrator Test", (accounts) => {
 
     const successes = await Promise.all(promises);
     successCountMarketsEntered = successes.reduce((a, b) => a + Number(b), 0);
-    console.log(`Succeeded ${successCountMarketsEntered} times`);
+    console.log(`${successCountMarketsEntered} accounts entered v2 market`);
   });
 
   it("should migrate", async () => {
@@ -111,7 +111,7 @@ contract("WBTCMigrator Test", (accounts) => {
     const successes = await Promise.all(promises);
     let successCount = successes.reduce((a, b) => a + Number(b), 0);
     assert.equal(successCount, successCountMarketsEntered);
-    console.log(`Succeeded ${successCount} times`);
+    console.log(`${successCount} accounts were migrated`);
   });
 
   before(async () => {
