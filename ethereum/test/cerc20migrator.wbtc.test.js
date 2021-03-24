@@ -105,10 +105,18 @@ contract("CERC20Migrator - WBTC Test", (accounts) => {
         // then we expect a migration to have happened...
         const numLogs = tx.receipt.rawLogs.length;
         const migration = tx.receipt.logs[0];
-        assert.isTrue(migration.logIndex >= numLogs - 2);
+        assert.isTrue(migration.logIndex >= numLogs - 3);
         assert.equal(migration.event, "Migrated");
         assert.equal(
           migration.args.account,
+          web3.utils.toChecksumAddress(supplier)
+        );
+
+        const gasUsed = tx.receipt.logs[1];
+        assert.isTrue(gasUsed.logIndex >= numLogs - 2);
+        assert.equal(gasUsed.event, "GasUsed");
+        assert.equal(
+          gasUsed.args.account,
           web3.utils.toChecksumAddress(supplier)
         );
 
@@ -119,19 +127,20 @@ contract("CERC20Migrator - WBTC Test", (accounts) => {
         );
 
         if (gasOptimized) {
-          assert.isTrue(numLogs === 27 || numLogs === 25);
-          assert.equal(
-            Math.round((10000 * underlyingV2Event) / underlyingV1Event).toFixed(
-              0
-            ),
-            "9991"
+          assert.isTrue(
+            numLogs === 28 || numLogs === 27 || numLogs === 26,
+            "Incorrect number of logs"
           );
-          assert.equal(
-            underlyingV2OnChain.mul("10000").div(underlyingV1Event).toFixed(0),
-            "9991"
+          assert.isTrue(
+            Math.round((10000 * underlyingV2Event) / underlyingV1Event) >= 9991,
+            "Too little underlying after migration (a)"
+          );
+          assert.isTrue(
+            underlyingV2OnChain.div(underlyingV1Event).gte(".99909"),
+            "Too little underlying after migration (b)"
           );
         } else {
-          assert.equal(numLogs, 37);
+          assert.equal(numLogs, 38);
           assert.equal(
             Math.round((10000 * underlyingV2Event) / underlyingV1Event).toFixed(
               0
@@ -139,7 +148,8 @@ contract("CERC20Migrator - WBTC Test", (accounts) => {
             "10000"
           );
           assert.isTrue(
-            underlyingV2OnChain.mul("10000").div(underlyingV1Event).gte("9999")
+            underlyingV2OnChain.mul("10000").div(underlyingV1Event).gte("9999"),
+            "Too little underlying after migration (c)"
           );
         }
       }
