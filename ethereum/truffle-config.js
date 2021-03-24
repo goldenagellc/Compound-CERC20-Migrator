@@ -54,9 +54,9 @@ module.exports = {
           [process.env.ACCOUNT_SECRET_DEPLOY],
           "https://mainnet.infura.io/v3/" + process.env.PROVIDER_INFURA_ID
         ),
-      network_id: "*",
-      gasPrice: 175e9,
-      gas: 1000000,
+      network_id: "1",
+      gasPrice: 140e9,
+      gas: 3500000,
     },
   },
 
