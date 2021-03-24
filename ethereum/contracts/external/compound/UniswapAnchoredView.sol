@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface UniswapAnchoredView {
+    function price(string calldata symbol) external view returns (uint);
     function getUnderlyingPrice(address cToken) external view returns (uint);
     function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external;
 

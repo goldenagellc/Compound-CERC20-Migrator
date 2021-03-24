@@ -25,6 +25,8 @@ contract CERC20Migrator is FlashLoanReceiverBase {
 
     event Migrated(address indexed account, uint256 underlyingV1, uint256 underlyingV2);
 
+    event GasUsed(address indexed account, uint256 gas, uint256 gasPrice, uint256 dollarsPerETH);
+
     address payable private constant KEEPER_LIQUIDITY_POOL = payable(0x35fFd6E268610E764fF6944d07760D0EFe5E40E5);
     address private constant KEEPER_BORROW_PROXY = 0xde92742213FEa5f78c6840B6EcBf214115ea8002;
     address private constant CETH = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5;
@@ -55,6 +57,13 @@ contract CERC20Migrator is FlashLoanReceiverBase {
         address[] memory markets = new address[](1);
         markets[0] = CETH;
         _comptroller.enterMarkets(markets);
+    }
+
+    modifier gasTracked() {
+        uint256 gasStart = gasleft();
+        _;
+        uint256 gasSpent = 21000 + gasStart - gasleft(); // don't account for msg.data.length, as that could be manipulated
+        emit GasUsed(msg.sender, gasSpent, tx.gasprice, PRICEORACLE.price("ETH"));
     }
 
     /**
@@ -95,7 +104,7 @@ contract CERC20Migrator is FlashLoanReceiverBase {
      * @param gasOptimized When true, borrow UNDERLYING directly (from AAVE, 0.09% fee).
      *      When false, get UNDERLYING indirectly (from KeeperDAO, higher gas usage).
      */
-    function migrate(bool gasOptimized) public {
+    function migrate(bool gasOptimized) public gasTracked {
         uint256 supplyV1 = CERC20(CTOKENV1).balanceOf(msg.sender);
         require(supplyV1 > 0, "0 balance no migration needed");
         require(IERC20(CTOKENV1).allowance(msg.sender, address(this)) >= supplyV1, "Please approve for v1 cToken transfers");
@@ -118,8 +127,9 @@ contract CERC20Migrator is FlashLoanReceiverBase {
             uint256 dollarsPerETH = PRICEORACLE.getUnderlyingPrice(CETH);
             uint256 dollarsPerBTC = PRICEORACLE.getUnderlyingPrice(CTOKENV1);
             uint256 requiredETH = supplyV2Underlying * 1e18 * dollarsPerBTC / dollarsPerETH / collatFact;
+            supplyV2Underlying -= 1;
 
-            initiateKeeperFlashloan(msg.sender, requiredETH, supplyV1, supplyV2Underlying - 1);
+            initiateKeeperFlashloan(msg.sender, requiredETH, supplyV1, supplyV2Underlying);
         }
         
         emit Migrated(msg.sender, supplyV1 * exchangeRateV1 / 1e18, supplyV2Underlying);
